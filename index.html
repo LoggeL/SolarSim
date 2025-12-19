@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Simulator 2025</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>SolarSim</h1>
+                <span class="badge">2025</span>
+            </div>
+
+            <div class="control-group">
+                <label for="solar-size">Solar System Size (kWp)</label>
+                <input type="number" id="solar-size" value="20" step="0.5" min="0">
+            </div>
+
+            <div class="control-group">
+                <label for="ev-dist">EV Daily Distance (km)</label>
+                <input type="number" id="ev-dist" value="0" step="5" min="0">
+            </div>
+
+            <div class="control-group">
+                <label for="battery-cap">Battery Capacity (kWh)</label>
+                <input type="number" id="battery-cap" value="10" step="0.5" min="0">
+            </div>
+
+            <div class="control-group">
+                <label for="battery-power">Max Charge Rate (kW)</label>
+                <input type="number" id="battery-power" value="5" step="0.5" min="0">
+            </div>
+
+            <div class="control-group">
+                <label for="hp-factor">Heat Pump Load Scaling</label>
+                <input type="range" id="hp-factor" min="0.5" max="2.0" step="0.1" value="0.85">
+                <span id="hp-factor-val">0.85x</span>
+            </div>
+
+            <div class="control-divider"></div>
+
+            <div class="kpi-card">
+                <h3>Self Sufficiency</h3>
+                <div class="kpi-value" id="kpi-sufficiency">--%</div>
+            </div>
+            <div class="kpi-card">
+                <h3>Self Consumption</h3>
+                <div class="kpi-value" id="kpi-consumption">--%</div>
+            </div>
+
+            <button id="recalc-btn" class="primary-btn">Update Simulation</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Top Dashboard -->
+            <section class="dashboard-grid">
+                <div class="card">
+                    <h4>Total Grid Import</h4>
+                    <div class="metric text-red" id="total-import">--- kWh</div>
+                </div>
+                <div class="card">
+                    <h4>Total Grid Export</h4>
+                    <div class="metric text-green" id="total-export">--- kWh</div>
+                </div>
+                <div class="card">
+                    <h4>Total Solar Production</h4>
+                    <div class="metric text-yellow" id="total-solar">--- kWh</div>
+                </div>
+                <div class="card">
+                    <h4>Total Consumption</h4>
+                    <div class="metric text-blue" id="total-load">--- kWh</div>
+                </div>
+            </section>
+
+            <!-- Chart Section -->
+            <section class="chart-container card" style="height: auto; min-height: 600px;">
+                <div class="chart-header">
+                    <h2>Daily Analysis</h2>
+                    <div class="date-controls">
+                        <button id="prev-day">←</button>
+                        <input type="date" id="date-picker" value="2025-01-01">
+                        <button id="next-day">→</button>
+                    </div>
+                </div>
+
+                <!-- Daily Stats -->
+                <div class="daily-stats-grid"
+                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                    <div>
+                        <span style="color: var(--color-solar); font-size: 0.875rem;">Solar</span>
+                        <div id="day-solar" class="metric" style="font-size: 1.25rem;">--</div>
+                    </div>
+                    <div>
+                        <span style="color: var(--color-load); font-size: 0.875rem;">Load</span>
+                        <div id="day-load" class="metric" style="font-size: 1.25rem;">--</div>
+                    </div>
+                    <div>
+                        <span style="color: var(--color-batt); font-size: 0.875rem;">Batt Cycle</span>
+                        <div id="day-batt" class="metric" style="font-size: 1.25rem;">--</div>
+                    </div>
+                    <div>
+                        <span style="color: var(--color-grid); font-size: 0.875rem;">Grid Net</span>
+                        <div id="day-grid" class="metric" style="font-size: 1.25rem;">--</div>
+                    </div>
+                </div>
+
+                <div class="canvas-wrapper" style="height: 300px; margin-bottom: 1rem;">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <div class="canvas-wrapper" style="height: 150px;">
+                    <canvas id="batteryChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Yearly Overview -->
+            <section class="chart-container card">
+                <h2>Yearly Overview (Monthly)</h2>
+                <div class="canvas-wrapper" style="height: 250px;">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Data & App -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
