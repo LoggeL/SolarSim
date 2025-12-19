@@ -77,11 +77,11 @@ BASE_LOAD_FACTOR = 0.3
 # =============================================================================
 
 # Directory structure
-SOLAR_DATA_DIR = "solar"
+SOLAR_DATA_DIR = "data/solar"
 DATA_OUTPUT_FILE = "data.js"
 
 # Input data files
-MONTHLY_USAGE_FILE = "solar/wa_pu_data.csv"
+MONTHLY_USAGE_FILE = "data/solar/wa_pu_data.csv"
 SOLAR_EXPORT_PATTERN = "E3DC-Export({month}).csv"
 
 # =============================================================================

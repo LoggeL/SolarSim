@@ -183,8 +183,8 @@ function runSimulation() {
 function updateTotals() {
     let tSolar = 0, tLoad = 0, tImport = 0, tExport = 0;
 
+        const stepHours = MINUTES_PER_STEP / 60.0;
         state.simulationResults.forEach(r => {
-            const stepHours = MINUTES_PER_STEP / 60.0;
             tSolar += r.solar_w * stepHours;
             tLoad += r.final_load * stepHours;
             tImport += r.grid_import * stepHours;
@@ -284,7 +284,6 @@ function renderDay() {
 
     // Calculate Daily Stats
     let dSolar = 0, dLoad = 0, dImport = 0, dExport = 0;
-    const stepHours = MINUTES_PER_STEP / 60.0;
     dayData.forEach(d => {
         dSolar += d.solar_w * stepHours;
         dLoad += d.final_load * stepHours;
@@ -296,7 +295,6 @@ function renderDay() {
     document.getElementById('day-load').innerText = (dLoad / 1000).toFixed(1) + " kWh";
 
     // Batt Cycle?
-    const stepHours = MINUTES_PER_STEP / 60.0;
     const battIn = dayData.reduce((acc, d) => acc + (d.batt_power > 0 ? d.batt_power * stepHours : 0), 0);
     const battOut = dayData.reduce((acc, d) => acc + (d.batt_power < 0 ? -d.batt_power * stepHours : 0), 0);
     // document.getElementById('day-batt').innerText = `+${(battIn/1000).toFixed(1)} / -${(battOut/1000).toFixed(1)} kWh`;
@@ -383,7 +381,6 @@ function updateMonthly() {
     // Aggregate by month
     const months = new Array(12).fill(0).map(() => ({ prod: 0, cons: 0, imp: 0, exp: 0, hp: 0, ev: 0, normal: 0 }));
 
-    const stepHours = MINUTES_PER_STEP / 60.0;
     state.simulationResults.forEach(r => {
         // TS: "YYYY-MM-DD ..."
         const mIdx = parseInt(r.ts.split('-')[1]) - 1;

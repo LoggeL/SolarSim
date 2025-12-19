@@ -59,7 +59,7 @@ data/solar/*.xls
 *.xls
 
 # Generated files that should be rebuilt
-data.js
+# data.js (allowed for initial setup)
 
 # Logs
 *.log
