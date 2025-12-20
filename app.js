@@ -283,6 +283,7 @@ function renderDay() {
     const labels = dayData.map(d => d.ts.split(' ')[1]);
 
     // Calculate Daily Stats
+    const stepHours = MINUTES_PER_STEP / 60.0;
     let dSolar = 0, dLoad = 0, dImport = 0, dExport = 0;
     dayData.forEach(d => {
         dSolar += d.solar_w * stepHours;
@@ -380,6 +381,7 @@ function renderDay() {
 function updateMonthly() {
     // Aggregate by month
     const months = new Array(12).fill(0).map(() => ({ prod: 0, cons: 0, imp: 0, exp: 0, hp: 0, ev: 0, normal: 0 }));
+    const stepHours = MINUTES_PER_STEP / 60.0;
 
     state.simulationResults.forEach(r => {
         // TS: "YYYY-MM-DD ..."
