@@ -1,12 +1,12 @@
 :root {
-    --bg-app: #0f1115;
-    --bg-card: #181b21;
-    --bg-sidebar: #131519;
+    --bg-app: transparent;
+    --bg-card: rgba(24, 27, 33, 0.85); /* Semi-transparent */
+    --bg-sidebar: rgba(19, 21, 25, 0.9); /* Semi-transparent */
     --text-primary: #ffffff;
     --text-secondary: #94a3b8;
     --accent: #3b82f6;
     --accent-hover: #2563eb;
-    --border: #2d333b;
+    --border: rgba(45, 51, 59, 0.5);
     
     --color-solar: #facc15;
     --color-grid: #ef4444;
@@ -21,27 +21,42 @@
 body {
     margin: 0;
     font-family: var(--font-family);
-    background-color: var(--bg-app);
+    background-color: #0f1115; /* Fallback */
     color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
 }
 
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
 .app-container {
+    position: relative;
+    z-index: 10;
     display: flex;
     height: 100%;
+    pointer-events: none; /* Let clicks pass through empty spaces */
 }
 
 /* Sidebar */
 .sidebar {
-    width: 300px;
+    pointer-events: auto; /* Re-enable clicks */
+    width: 320px;
     background-color: var(--bg-sidebar);
     border-right: 1px solid var(--border);
+    backdrop-filter: blur(10px);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     overflow-y: auto;
+    /* transition: transform 0.3s ease; */
 }
 
 .logo h1 {
@@ -75,18 +90,18 @@ body {
 }
 
 .control-group input[type="number"] {
-    background-color: var(--bg-card);
+    background-color: rgba(0,0,0,0.3);
     border: 1px solid var(--border);
     color: var(--text-primary);
-    padding: 0.75rem; /* Larger padding for touch targets */
+    padding: 0.5rem;
     border-radius: 6px;
     font-size: 1rem;
-    width: 100%; /* Full width */
+    width: 100%;
 }
 
 .control-group input[type="range"] {
     width: 100%;
-    height: 1.5rem; /* Taller touch target */
+    height: 1.5rem;
 }
 
 .control-divider {
@@ -96,7 +111,7 @@ body {
 }
 
 .kpi-card {
-    background-color: var(--bg-card);
+    background-color: rgba(255,255,255,0.05);
     padding: 1rem;
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -138,16 +153,29 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    align-items: flex-end; /* Align cards to right so center is open for 3D */
+    /* pointer-events: none; handled by container? No need to re-disable */
 }
 
+/* Make Dashboard Grid horizontal strip or floaters */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    pointer-events: auto;
+    display: flex; /* Flex row instead of grid */
     gap: 1rem;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.dashboard-grid .card {
+    flex: 1;
+    max-width: 250px;
+    min-width: 180px;
 }
 
 .card {
+    pointer-events: auto;
     background-color: var(--bg-card);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
@@ -176,9 +204,10 @@ body {
 .text-blue { color: #60a5fa; }
 
 .chart-container {
+    width: 100%;
+    max-width: 800px; /* Limit chart width */
     display: flex;
     flex-direction: column;
-    height: 400px; /* fixed height for charts */
 }
 
 .chart-header {
@@ -204,7 +233,7 @@ body {
     cursor: pointer;
 }
 .date-controls input {
-    background: var(--bg-app);
+    background: rgba(0,0,0,0.3);
     color: white;
     border: 1px solid var(--border);
     padding: 0.25rem 0.5rem;
@@ -216,6 +245,51 @@ body {
     flex: 1;
     position: relative;
     width: 100%;
+}
+
+.minimized {
+    /* Style for monthly chart to be smaller/bottom */
+    max-height: 250px;
+}
+
+/* Playback Control */
+.playback-container {
+    width: 100%;
+    max-width: 800px;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.playback-controls {
+    display: flex;
+    width: 100%;
+    gap: 1rem;
+    align-items: center;
+}
+
+.icon-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#time-slider {
+    flex: 1;
+    accent-color: var(--accent);
+}
+
+#time-display {
+    font-variant-numeric: tabular-nums;
+    min-width: 50px;
+    text-align: right;
 }
 
 /* Mobile Responsiveness */
@@ -266,10 +340,16 @@ body {
     .content {
         padding: 1rem;
         overflow: visible;
+        align-items: stretch; /* Full width on mobile */
     }
 
     .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr);
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .dashboard-grid .card {
+        min-width: 140px;
     }
 
     .daily-stats-grid {
@@ -279,6 +359,7 @@ body {
     .chart-container {
         height: auto;
         min-height: 400px;
+        max-width: 100%;
     }
 }
 
@@ -291,11 +372,5 @@ body {
     .sidebar-header {
         display: block;
         width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
     }
 }
