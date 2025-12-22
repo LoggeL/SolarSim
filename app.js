@@ -494,4 +494,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved state and run initial simulation
     loadState();
     runSimulation();
+
+    // Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+
+    // Initially collapse sidebar on mobile
+    if (window.innerWidth <= 768) {
+        sidebar.classList.add('collapsed');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+    });
+
+    // Handle resize events
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('collapsed');
+        } else {
+            // Optional: Auto-collapse when resizing down?
+            // Better to leave user choice unless it was never set.
+        }
+
+        // Resize charts
+        if(dailyChart) dailyChart.resize();
+        if(batteryChart) batteryChart.resize();
+        if(monthlyChart) monthlyChart.resize();
+    });
 });
