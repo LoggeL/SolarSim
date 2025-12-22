@@ -24,7 +24,11 @@ let state = {
     solarSize: DEFAULT_SOLAR_SIZE,
     evDailyDist: DEFAULT_EV_DISTANCE,
     currentDate: new Date('2025-01-01'),
-    simulationResults: [] // Parallel to SIM_DATA
+    simulationResults: [], // Parallel to SIM_DATA
+    currentDayData: [],
+    playbackIndex: 0,
+    isPlaying: false,
+    playbackInterval: null
 };
 
 // LocalStorage functions
@@ -94,21 +98,20 @@ function runSimulation() {
         const dailyNeededWh = state.evDailyDist * EV_KWH_PER_KM * 1000;
         const chargePowerW = EV_CHARGE_POWER_KW * 1000;
 
-        // This logic is slightly flawed for a simple .map() because we don't carry state easily between steps for "amount charged today".
-        // But let's approximate: 
-        // Charge happens between 18:00 and X.
+        // FIXED: Handle crossing midnight
+        // If hour < 12 (morning), treat as next day (hour + 24) relative to 18:00 start
+        // This allows charging to continue past midnight
+        const adjustedHour = (hour < 12) ? hour + 24 : hour;
 
         if (dailyNeededWh > 0) {
             const hoursNeeded = dailyNeededWh / chargePowerW;
-            const fractionalHoursSince18 = (hour - EV_START_HOUR) + (minute / 60.0);
+            const fractionalHoursSince18 = (adjustedHour - EV_START_HOUR) + (minute / 60.0);
 
             if (fractionalHoursSince18 >= 0 && fractionalHoursSince18 < hoursNeeded) {
                 // Full power
                 evLoadW = chargePowerW;
             } else if (fractionalHoursSince18 >= 0 && fractionalHoursSince18 < (hoursNeeded + 0.25)) {
                 // Partial last step? Simplified: just Cutoff.
-                // We ignore partial step precision for now or spread it.
-                // If we are mostly done, we stop.
             }
         }
 
@@ -277,8 +280,13 @@ function renderDay() {
     // TS format in data is "YYYY-MM-DD HH:MM"
     const startPrefix = dayStr;
     const dayData = state.simulationResults.filter(d => d.ts.startsWith(startPrefix));
+    state.currentDayData = dayData; // Store for playback
 
     if (dayData.length === 0) return;
+
+    // Reset Playback if day changes
+    updatePlayback(0);
+    document.getElementById('time-slider').value = 0;
 
     const labels = dayData.map(d => d.ts.split(' ')[1]);
 
@@ -491,6 +499,18 @@ document.addEventListener('DOMContentLoaded', () => {
         renderDay();
     });
 
+    // Playback Controls
+    const playBtn = document.getElementById('play-pause-btn');
+    const slider = document.getElementById('time-slider');
+
+    playBtn.addEventListener('click', togglePlayback);
+
+    slider.addEventListener('input', (e) => {
+        // Pause if user drags
+        if (state.isPlaying) togglePlayback();
+        updatePlayback(parseInt(e.target.value));
+    });
+
     // Load saved state and run initial simulation
     loadState();
     runSimulation();
@@ -523,3 +543,52 @@ document.addEventListener('DOMContentLoaded', () => {
         if(monthlyChart) monthlyChart.resize();
     });
 });
+
+// Playback Logic
+function togglePlayback() {
+    const btn = document.getElementById('play-pause-btn');
+    state.isPlaying = !state.isPlaying;
+
+    if (state.isPlaying) {
+        btn.innerText = '⏸';
+        state.playbackInterval = setInterval(() => {
+            let nextIndex = state.playbackIndex + 1;
+            if (nextIndex >= 96) nextIndex = 0; // Loop
+            updatePlayback(nextIndex);
+            document.getElementById('time-slider').value = nextIndex;
+        }, 100); // Speed: 100ms per 15min step
+    } else {
+        btn.innerText = '▶';
+        clearInterval(state.playbackInterval);
+    }
+}
+
+function updatePlayback(index) {
+    state.playbackIndex = index;
+    const data = state.currentDayData[index];
+
+    if (!data) return;
+
+    // Update Time Display
+    const timeStr = data.ts.split(' ')[1];
+    document.getElementById('time-display').innerText = timeStr;
+
+    // Update 3D Scene
+    // Prepare data object for 3D
+    const hour = parseInt(timeStr.split(':')[0]) + parseInt(timeStr.split(':')[1])/60;
+
+    if (window.Solar3D) {
+        window.Solar3D.updateState({
+            hour: hour,
+            solar_w: data.solar_w,
+            batt_soc: data.batt_soc,
+            ev_w: data.ev_w,
+            grid_import: data.grid_import,
+            grid_export: data.grid_export
+        });
+    }
+
+    // Optional: Highlight Chart point?
+    // This is expensive to do every 100ms on Chart.js without optimization.
+    // We'll skip updating the chart visuals for now, just the 3D scene and time text.
+}

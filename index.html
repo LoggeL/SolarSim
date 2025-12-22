@@ -11,9 +11,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
 </head>
 
 <body>
+    <!-- 3D Background -->
+    <div id="canvas-container"></div>
+    <script type="module" src="scene.js"></script>
+
     <div class="app-container">
         <!-- Sidebar Controls -->
         <aside class="sidebar" id="sidebar">
@@ -94,7 +108,7 @@
             </section>
 
             <!-- Chart Section -->
-            <section class="chart-container card" style="height: auto; min-height: 600px;">
+            <section class="chart-container card" style="height: auto; min-height: 400px;">
                 <div class="chart-header">
                     <h2>Daily Analysis</h2>
                     <div class="date-controls">
@@ -125,18 +139,27 @@
                     </div>
                 </div>
 
-                <div class="canvas-wrapper" style="height: 300px; margin-bottom: 1rem;">
+                <div class="canvas-wrapper" style="height: 200px; margin-bottom: 1rem;">
                     <canvas id="dailyChart"></canvas>
                 </div>
-                <div class="canvas-wrapper" style="height: 150px;">
+                <div class="canvas-wrapper" style="height: 100px;">
                     <canvas id="batteryChart"></canvas>
                 </div>
             </section>
 
+            <!-- Playback Controls -->
+            <section class="playback-container card">
+                 <div class="playback-controls">
+                     <button id="play-pause-btn" class="icon-btn">▶</button>
+                     <input type="range" id="time-slider" min="0" max="95" value="0" step="1">
+                     <span id="time-display">00:00</span>
+                 </div>
+            </section>
+
             <!-- Yearly Overview -->
-            <section class="chart-container card">
+            <section class="chart-container card minimized">
                 <h2>Yearly Overview (Monthly)</h2>
-                <div class="canvas-wrapper" style="height: 250px;">
+                <div class="canvas-wrapper" style="height: 150px;">
                     <canvas id="monthlyChart"></canvas>
                 </div>
             </section>
