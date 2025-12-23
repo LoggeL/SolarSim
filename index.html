@@ -82,33 +82,25 @@
                 <div class="kpi-value" id="kpi-consumption">--%</div>
             </div>
 
+             <!-- Hidden metrics for JS access, but not displayed -->
+             <div style="display:none">
+                <div id="total-import"></div>
+                <div id="total-export"></div>
+                <div id="total-solar"></div>
+                <div id="total-load"></div>
+                <div id="day-solar"></div>
+                <div id="day-load"></div>
+                <div id="day-batt"></div>
+                <div id="day-grid"></div>
+             </div>
+
             <button id="recalc-btn" class="primary-btn">Update Simulation</button>
         </aside>
 
         <!-- Main Content -->
         <main class="content">
-            <!-- Top Dashboard -->
-            <section class="dashboard-grid">
-                <div class="card">
-                    <h4>Total Grid Import</h4>
-                    <div class="metric text-red" id="total-import">--- kWh</div>
-                </div>
-                <div class="card">
-                    <h4>Total Grid Export</h4>
-                    <div class="metric text-green" id="total-export">--- kWh</div>
-                </div>
-                <div class="card">
-                    <h4>Total Solar Production</h4>
-                    <div class="metric text-yellow" id="total-solar">--- kWh</div>
-                </div>
-                <div class="card">
-                    <h4>Total Consumption</h4>
-                    <div class="metric text-blue" id="total-load">--- kWh</div>
-                </div>
-            </section>
-
             <!-- Chart Section -->
-            <section class="chart-container card" style="height: auto; min-height: 400px;">
+            <section class="chart-container card">
                 <div class="chart-header">
                     <h2>Daily Analysis</h2>
                     <div class="date-controls">
@@ -118,28 +110,7 @@
                     </div>
                 </div>
 
-                <!-- Daily Stats -->
-                <div class="daily-stats-grid"
-                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
-                    <div>
-                        <span style="color: var(--color-solar); font-size: 0.875rem;">Solar</span>
-                        <div id="day-solar" class="metric" style="font-size: 1.25rem;">--</div>
-                    </div>
-                    <div>
-                        <span style="color: var(--color-load); font-size: 0.875rem;">Load</span>
-                        <div id="day-load" class="metric" style="font-size: 1.25rem;">--</div>
-                    </div>
-                    <div>
-                        <span style="color: var(--color-batt); font-size: 0.875rem;">Batt Cycle</span>
-                        <div id="day-batt" class="metric" style="font-size: 1.25rem;">--</div>
-                    </div>
-                    <div>
-                        <span style="color: var(--color-grid); font-size: 0.875rem;">Grid Net</span>
-                        <div id="day-grid" class="metric" style="font-size: 1.25rem;">--</div>
-                    </div>
-                </div>
-
-                <div class="canvas-wrapper" style="height: 200px; margin-bottom: 1rem;">
+                <div class="canvas-wrapper">
                     <canvas id="dailyChart"></canvas>
                 </div>
                 <div class="canvas-wrapper" style="height: 100px;">
@@ -156,13 +127,10 @@
                  </div>
             </section>
 
-            <!-- Yearly Overview -->
-            <section class="chart-container card minimized">
-                <h2>Yearly Overview (Monthly)</h2>
-                <div class="canvas-wrapper" style="height: 150px;">
-                    <canvas id="monthlyChart"></canvas>
-                </div>
-            </section>
+            <!-- Hidden yearly chart canvas to avoid JS errors, or keep it if needed but hidden via CSS -->
+            <div style="display:none">
+                 <canvas id="monthlyChart"></canvas>
+            </div>
         </main>
     </div>
 

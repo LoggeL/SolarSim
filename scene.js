@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 console.log("Scene module loaded");
 
@@ -10,6 +11,7 @@ class SolarScene {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
+        this.labelRenderer = null;
         this.controls = null;
 
         // Objects
@@ -23,6 +25,15 @@ class SolarScene {
         this.sunLight = null;
         this.ambientLight = null;
         this.sunMesh = null; // Visible sun sphere
+
+        // Labels
+        this.labels = {
+            solar: null,
+            battery: null,
+            ev: null,
+            load: null,
+            grid: null
+        };
 
         this.init();
         this.animate();
@@ -46,6 +57,14 @@ class SolarScene {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.container.appendChild(this.renderer.domElement);
 
+        // Label Renderer
+        this.labelRenderer = new CSS2DRenderer();
+        this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        this.labelRenderer.domElement.style.position = 'absolute';
+        this.labelRenderer.domElement.style.top = '0px';
+        this.labelRenderer.domElement.style.pointerEvents = 'none'; // Let clicks pass through
+        this.container.appendChild(this.labelRenderer.domElement);
+
         // Controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
@@ -53,6 +72,11 @@ class SolarScene {
         this.controls.minDistance = 10;
         this.controls.maxDistance = 100;
         this.controls.target.set(0, 2, 0);
+        // Important: Controls are attached to WebGL canvas, but label layer is on top.
+        // We need to attach listeners to label renderer or make label renderer pass events.
+        // Actually OrbitControls attaches to domElement.
+        // Since labelRenderer is on top, we should attach controls to labelRenderer.domElement OR make labelRenderer pointer-events: none.
+        // I set pointer-events: none on labelRenderer above, so events go to WebGL canvas. Good.
 
         // Lighting
         this.ambientLight = new THREE.AmbientLight(0x404040, 0.5);
@@ -88,9 +112,31 @@ class SolarScene {
         this.createHouse();
         this.createBattery();
         this.createEV();
+        this.createGrid();
 
         // Handle Resize
         window.addEventListener('resize', () => this.onWindowResize(), false);
+    }
+
+    createLabel(title, cssClass) {
+        const div = document.createElement('div');
+        div.className = `label-container ${cssClass}`;
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'label-title';
+        titleDiv.textContent = title;
+        div.appendChild(titleDiv);
+
+        const valueDiv = document.createElement('div');
+        valueDiv.className = 'label-value';
+        valueDiv.textContent = '--';
+        div.appendChild(valueDiv);
+
+        return {
+            element: div,
+            valueElement: valueDiv,
+            object: new CSS2DObject(div)
+        };
     }
 
     createHouse() {
@@ -106,11 +152,6 @@ class SolarScene {
         houseGroup.add(body);
 
         // Roof (Prism)
-        // A simple way to make a prism roof is 4-sided Cylinder(cone) with 2 height segments?
-        // Or just a scaled Cone.
-        // Let's use a group of planes or shapes.
-        // Or BufferGeometry.
-        // Let's use ConeGeometry(radius, height, 4) rotated 45deg.
         const roofHeight = 4;
         const roofGeo = new THREE.ConeGeometry(8, roofHeight, 4);
         const roofMat = new THREE.MeshStandardMaterial({ color: 0x9a3412 });
@@ -122,16 +163,7 @@ class SolarScene {
         houseGroup.add(roof);
 
         // Solar Panels
-        // Place on the South side of the roof.
-        // Cone geometry side angle?
-        // atan(height/radius) -> atan(4/8) roughly.
-        // Let's just place a plane at the approximate angle.
         const panelGroup = new THREE.Group();
-        // Roof slope angle
-        // height 2, radius ~5.6 (8*0.707).
-        // Let's eyeball it: ~30 deg?
-        // Actually, let's just put it on top of the roof mesh.
-
         const panelGeo = new THREE.PlaneGeometry(6, 3);
         const panelMat = new THREE.MeshStandardMaterial({
             color: 0x1e3a8a,
@@ -142,19 +174,26 @@ class SolarScene {
         });
         const panel = new THREE.Mesh(panelGeo, panelMat);
 
-        // Position on the "South" face (Z+)
-        // Roof peak is at y=8. Side goes down to y=6 at z=4.
-        // Midpoint: y=7, z=2.
-        // Rotation: Slopes down towards Z.
         panel.position.set(0, 7.2, 2.2);
         panel.rotation.x = -Math.PI / 4; // 45 deg slope
 
         panelGroup.add(panel);
         houseGroup.add(panelGroup);
-        this.panels.push(panel); // Store for animation
+        this.panels.push(panel);
 
         this.house = houseGroup;
         this.scene.add(this.house);
+
+        // Labels
+        // Solar Label
+        this.labels.solar = this.createLabel('Solar', 'label-solar');
+        this.labels.solar.object.position.set(0, 9, 2);
+        houseGroup.add(this.labels.solar.object);
+
+        // Load Label
+        this.labels.load = this.createLabel('House Load', 'label-load');
+        this.labels.load.object.position.set(0, 3, 5); // Front of house
+        houseGroup.add(this.labels.load.object);
     }
 
     createBattery() {
@@ -179,13 +218,17 @@ class SolarScene {
         const barGeo = new THREE.BoxGeometry(0.5, 1, 0.1);
         const barMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
         this.batteryLevelMesh = new THREE.Mesh(barGeo, barMat);
-        this.batteryLevelMesh.position.set(0, 0.5, 0.52); // Start at bottom of indicator area
-        // We will scale Y and move Y to animate
+        this.batteryLevelMesh.position.set(0, 0.5, 0.52);
         group.add(this.batteryLevelMesh);
 
         group.position.set(6, 0, 2); // Side of house
         this.scene.add(group);
         this.batteryMesh = group;
+
+        // Battery Label
+        this.labels.battery = this.createLabel('Battery', 'label-batt');
+        this.labels.battery.object.position.set(0, 4, 0);
+        group.add(this.labels.battery.object);
     }
 
     createEV() {
@@ -237,89 +280,83 @@ class SolarScene {
         group.rotation.y = Math.PI / 6;
         this.scene.add(group);
         this.evMesh = group;
+
+        // EV Label
+        this.labels.ev = this.createLabel('EV Charging', 'label-ev');
+        this.labels.ev.object.position.set(0, 3, 0);
+        group.add(this.labels.ev.object);
+    }
+
+    createGrid() {
+        // Simple representation of Grid connection (e.g., a power pole or just a point in space)
+        const group = new THREE.Group();
+
+        const poleGeo = new THREE.CylinderGeometry(0.2, 0.2, 8);
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        pole.position.y = 4;
+        group.add(pole);
+
+        const crossGeo = new THREE.BoxGeometry(3, 0.2, 0.2);
+        const cross = new THREE.Mesh(crossGeo, poleMat);
+        cross.position.y = 7;
+        group.add(cross);
+
+        group.position.set(-15, 0, -10);
+        this.scene.add(group);
+
+        // Grid Label
+        this.labels.grid = this.createLabel('Grid Net', 'label-grid');
+        this.labels.grid.object.position.set(0, 8.5, 0);
+        group.add(this.labels.grid.object);
+
+        // Wire to house?
+        // Let's draw a line?
+        // For now, keep it simple.
     }
 
     onWindowResize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     animate() {
         requestAnimationFrame(() => this.animate());
         this.controls.update();
         this.renderer.render(this.scene, this.camera);
+        this.labelRenderer.render(this.scene, this.camera);
     }
 
     // API for App
     updateState(data) {
-        // data expected:
-        // {
-        //   hour: number (0-24),
-        //   solar_w: number,
-        //   batt_soc: number (0-100),
-        //   ev_w: number,
-        //   grid_import: number,
-        //   grid_export: number
-        // }
-
         if (!data) return;
 
         // 1. Sun Position
-        // Zenith at 12:00.
-        // 06:00 Rise, 18:00 Set.
-        // Map hour to angle.
-        // 12 -> 90 deg (Top)
-        // 6 -> 0 deg (Horizon East)
-        // 18 -> 180 deg (Horizon West)
-
-        // Angle in radians.
-        // Let's cycle it: 0h = -90deg (Night), 12h = 90deg (Noon).
-        // (hour - 6) * 15 deg?
-        // 0h -> -90
-        // 6h -> 0
-        // 12h -> 90
-        // 18h -> 180
-        // 24h -> 270 (-90)
-
         const angle = (data.hour - 6) * (Math.PI / 12); // -PI/2 to 3PI/2
         const radius = 80;
-        const sunX = Math.cos(-angle) * radius; // Invert angle for correct East-West motion
-        const sunY = Math.sin(-angle) * radius;
+        const sunX = Math.cos(angle) * radius;
+        const sunY = Math.sin(angle) * radius;
 
         if (sunY > -10) {
-            this.sunLight.intensity = Math.max(0, Math.sin(-angle) * 1.5);
-            this.scene.background.setHSL(0.6, 0.5, Math.max(0.05, Math.sin(-angle) * 0.5 + 0.1));
+            this.sunLight.intensity = Math.max(0, Math.sin(angle) * 1.5);
+            this.scene.background.setHSL(0.6, 0.5, Math.max(0.05, Math.sin(angle) * 0.5 + 0.1));
         } else {
             this.sunLight.intensity = 0;
             this.scene.background.setHSL(0.6, 0.5, 0.05); // Night
         }
 
-        this.sunLight.position.set(sunX, Math.max(sunY, -10), 0); // Keep from going too low
+        this.sunLight.position.set(sunX, Math.max(sunY, -10), 0);
         this.sunMesh.position.copy(this.sunLight.position);
 
         // 2. Battery SOC
-        // Bar height max 2.5 (bg is 2.5).
-        // Start pos y = 0.25 (inside bg).
         const soc = data.batt_soc / 100;
         const maxH = 2.4;
         const h = maxH * soc;
-        this.batteryLevelMesh.scale.y = Math.max(0.01, h); // Scale height
-        // Since geometry is centered, we need to move it too?
-        // BoxGeometry(0.5, 1, 0.1). Height is 1.
-        // If scale.y = h, height is h.
-        // Position should be base + h/2.
-        // Base of container is 1.5 - 1.25 = 0.25.
-        // Let's simplify: Set scale and position.
-        // Default height 1. Center at 0.5. Base at 0.
-        // We want base at (BatteryGroup Y + 0.25).
-        // BatteryGroup IndBack center is 1.5. Height 2.5. Base is 1.5 - 1.25 = 0.25.
-        // So Bar base should be 0.25.
-        this.batteryLevelMesh.position.y = 0.25 + (h / 2 * 1); // 1 is base geometry height
-        this.batteryLevelMesh.scale.y = h;
-
-        // Color: Green if high, Red if low
-        this.batteryLevelMesh.material.color.setHSL(soc * 0.3, 1, 0.5); // 0=Red, 0.3=Green
+        this.batteryLevelMesh.scale.y = Math.max(0.01, h);
+        this.batteryLevelMesh.position.y = 0.25 + (h / 2 * 1);
+        this.batteryLevelMesh.material.color.setHSL(soc * 0.3, 1, 0.5);
 
         // 3. EV Charging
         if (data.ev_w > 100) {
@@ -342,6 +379,50 @@ class SolarScene {
                 p.material.emissive.setHex(0x000000);
             });
         }
+
+        // 5. Update Labels
+        this.updateLabel(this.labels.solar, data.solar_w, 'W');
+        this.updateLabel(this.labels.battery, Math.round(data.batt_soc), '%');
+        this.updateLabel(this.labels.ev, data.ev_w, 'W');
+
+        // Grid Net: Import (red) - Export (Green, but shown as neg grid usage usually?)
+        // Let's show:
+        // Import > 0: "Import: 500 W" (Red)
+        // Export > 0: "Export: 1200 W" (Green)
+        const gridNet = data.grid_import - data.grid_export;
+        if (gridNet > 10) {
+             this.labels.grid.valueElement.textContent = `Import ${Math.round(gridNet)} W`;
+             this.labels.grid.valueElement.style.color = 'var(--color-grid)'; // Red
+        } else if (gridNet < -10) {
+             this.labels.grid.valueElement.textContent = `Export ${Math.round(-gridNet)} W`;
+             this.labels.grid.valueElement.style.color = '#22c55e'; // Green
+        } else {
+             this.labels.grid.valueElement.textContent = `0 W`;
+             this.labels.grid.valueElement.style.color = 'white';
+        }
+
+        // House Load (Total consumption excluding EV?)
+        // data usually has 'final_load' which includes EV and HP.
+        // Let's show total load.
+        // Or separation?
+        // Let's show total load on house.
+        // Calculating total load from available data:
+        // In app.js: updateState receives data object.
+        // We might need to ensure 'final_load' or similar is passed.
+        // Currently app.js passes: hour, solar_w, batt_soc, ev_w, grid_import, grid_export.
+        // It does NOT pass load.
+        // We can infer load = solar + battery_discharge + grid_import - grid_export - battery_charge.
+        // Or better, update app.js to pass load.
+
+        // For now, I'll update app.js to pass 'load_w'.
+        if (data.load_w !== undefined) {
+             this.updateLabel(this.labels.load, data.load_w, 'W');
+        }
+    }
+
+    updateLabel(labelObj, value, unit) {
+        if (!labelObj) return;
+        labelObj.valueElement.textContent = `${Math.round(value)} ${unit}`;
     }
 }
 

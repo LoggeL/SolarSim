@@ -584,7 +584,8 @@ function updatePlayback(index) {
             batt_soc: data.batt_soc,
             ev_w: data.ev_w,
             grid_import: data.grid_import,
-            grid_export: data.grid_export
+            grid_export: data.grid_export,
+            load_w: data.final_load // Pass total load for label
         });
     }
 
