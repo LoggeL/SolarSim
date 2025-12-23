@@ -374,3 +374,95 @@ body {
         width: 100%;
     }
 }
+
+/* 3D Labels */
+.label-container {
+    font-family: 'Inter', sans-serif;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s;
+}
+
+.label-title {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    letter-spacing: 0.05em;
+}
+
+.label-value {
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.label-solar .label-value { color: var(--color-solar); }
+.label-batt .label-value { color: var(--color-batt); }
+.label-grid .label-value { color: var(--color-grid); }
+.label-load .label-value { color: var(--color-load); }
+.label-ev .label-value { color: #a78bfa; }
+
+/* Redesign Tweaks */
+.dashboard-grid {
+    display: none !important; /* Hide dashboard cards */
+}
+
+.content {
+    justify-content: flex-end; /* Push content to bottom */
+    padding: 1rem;
+    pointer-events: none; /* Allow clicking through empty content area */
+}
+
+.card {
+    pointer-events: auto; /* Enable interaction with cards */
+    background-color: rgba(15, 23, 42, 0.8); /* Darker, slightly transparent */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-container {
+    max-width: 400px; /* Smaller charts */
+    min-height: auto !important;
+    height: auto;
+    margin-left: auto; /* Align right */
+}
+
+.chart-header h2 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.daily-stats-grid {
+    display: none !important; /* Hide stats in chart card too, rely on 3D */
+}
+
+.canvas-wrapper {
+    height: 150px !important; /* Force smaller height */
+}
+
+.playback-container {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1rem;
+}
+
+.minimized {
+    display: none; /* Hide yearly overview for now to declutter */
+}
+
+/* Make Sidebar more overlay-like */
+.sidebar {
+    background-color: rgba(15, 23, 42, 0.85);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    width: 280px; /* Slightly narrower */
+}
